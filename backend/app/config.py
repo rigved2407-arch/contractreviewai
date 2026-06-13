@@ -1,4 +1,20 @@
+import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+
+SECRETS_DIR = Path("/run/secrets")
+
+
+def _from_env_or_secret(name: str, default: str = "") -> str:
+    """Read from env var first, then Docker secret file, then default."""
+    val = os.environ.get(name)
+    if val:
+        return val
+    secret_path = SECRETS_DIR / name.lower()
+    if secret_path.is_file():
+        return secret_path.read_text().strip()
+    return default
 
 
 class Settings(BaseSettings):
@@ -54,6 +70,18 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Fall back to Docker secrets for sensitive fields
+        self.openai_api_key = self.openai_api_key or _from_env_or_secret("OPENAI_API_KEY")
+        self.encryption_key = self.encryption_key or _from_env_or_secret("ENCRYPTION_KEY")
+        self.api_key = self.api_key or _from_env_or_secret("API_KEY")
+        self.jwt_secret = self.jwt_secret or _from_env_or_secret("JWT_SECRET")
+        self.smtp_user = self.smtp_user or _from_env_or_secret("SMTP_USER")
+        self.smtp_password = self.smtp_password or _from_env_or_secret("SMTP_PASSWORD")
+        self.sentry_dsn = self.sentry_dsn or _from_env_or_secret("SENTRY_DSN")
+        self.azure_openai_key = self.azure_openai_key or _from_env_or_secret("AZURE_OPENAI_KEY")
 
 
 settings = Settings()
