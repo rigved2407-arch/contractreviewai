@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="/dashboard" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-5 transition-colors group">
+  <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+  Back to Dashboard
+</a>
+
+{% if contract.status == "analyzed" and contract.risk_score is not none %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
+  <div class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+    <div class="flex items-start justify-between flex-wrap gap-4">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2.5 mb-2">
+          <span class="px-2.5 py-0.5 bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 uppercase tracking-wider">{{ contract.file_type|replace(".","") }}</span>
+          {% if contract.risk_score > 50 %}
+          <span class="px-2.5 py-0.5 bg-red-100 text-red-800 rounded-full text-xs font-medium border border-red-200">High Risk</span>
+          {% elif contract.risk_score > 25 %}
+          <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-medium border border-amber-200">Medium Risk</span>
+          {% else %}
+          <span class="px-2.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium border border-green-200">Low Risk</span>
+          {% endif %}
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900 break-all leading-tight">{{ contract.filename }}</h1>
+        <p class="text-sm text-slate-400 mt-1.5">Analyzed &middot; {{ contract.clauses|length }} clauses identified</p>
+      </div>
+    </div>
+
+    {% if contract.summary %}
+    <div class="mt-5 p-4 bg-gradient-to-r from-brand-50 to-indigo-50 rounded-xl border border-brand-200">
+      <div class="flex items-center gap-2 mb-2">
+        <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-xs font-semibold text-brand-700 uppercase tracking-wider">Executive Summary</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">{{ contract.summary }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col items-center justify-center">
+    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Risk Score</p>
+    <div class="relative w-28 h-28 mb-2">
+      <svg class="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+        <circle cx="60" cy="60" r="50" fill="none"
+          stroke="{% if contract.risk_score > 50 %}#ef4444{% elif contract.risk_score > 25 %}#f59e0b{% else %}#22c55e{% endif %}"
+          stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="314.159"
+          stroke-dashoffset="{{ 314.159 - (314.159 * contract.risk_score / 100) }}"
+          class="transition-all duration-1000"/>
+      </svg>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span class="text-3xl font-bold {% if contract.risk_score > 50 %}text-red-600{% elif contract.risk_score > 25 %}text-amber-600{% else %}text-green-600{% endif %}">{{ "%.0f"|format(contract.risk_score) }}<span class="text-lg font-normal">%</span></span>
+      </div>
+    </div>
+    <p class="text-xs text-slate-400 text-center">
+      {% if contract.risk_score > 50 %}High risk — review required before signing
+      {% elif contract.risk_score > 25 %}Moderate risk — specific clauses need attention
+      {% else %}Low risk — standard terms{% endif %}
+    </p>
+  </div>
+</div>
+
+{% if compliance %}
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-2.5">
+      <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <span class="text-base font-bold text-slate-900">Indian Regulatory Compliance Report</span>
+    </div>
+    <span class="px-3 py-1 rounded-full text-xs font-semibold
+      {% if compliance.score >= 75 %}bg-green-100 text-green-800 border border-green-200
+      {% elif compliance.score >= 50 %}bg-amber-100 text-amber-800 border border-amber-200
+      {% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+      {{ "%.0f"|format(compliance.score) }}% Compliant
+    </span>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    {% for check in compliance.checks %}
+    <div class="flex items-start gap-3 p-3 rounded-xl border {% if check.found %}bg-green-50 border-green-200{% else %}bg-slate-50 border-slate-200{% endif %}">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {% if check.found %}bg-green-100 text-green-700{% else %}bg-slate-200 text-slate-500{% endif %}">
+        {% if check.icon == "shield" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        {% elif check.icon == "receipt" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01M15 11h.01M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
+        {% elif check.icon == "bank" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        {% elif check.icon == "scale" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16a9 9 0 0010-9H8a9 9 0 0010 9z"/></svg>
+        {% elif check.icon == "gavel" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {% elif check.icon == "clock" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {% elif check.icon == "percent" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        {% elif check.icon == "cloud" %}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+        {% endif %}
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-slate-800">{{ check.name }}</p>
+        <p class="text-xs text-slate-400 mt-0.5">{{ "Referenced in contract" if check.found else "Not found in contract" }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-6">
+  <div class="flex items-start justify-between flex-wrap gap-4">
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="px-2.5 py-0.5 bg-slate-100 rounded-lg text-xs font-semibold text-slate-600 uppercase tracking-wider">{{ contract.file_type|replace(".","") }}</span>
+        <span class="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">{{ contract.status }}</span>
+      </div>
+      <h1 class="text-xl font-bold text-slate-900 break-all">{{ contract.filename }}</h1>
+    </div>
+    <div class="flex gap-3 shrink-0">
+      {% if contract.status != "analyzed" %}
+      <button hx-post="/web/analyze/{{ contract.id }}" hx-target="#clause-results" hx-indicator="#analysis-spinner" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl text-sm font-medium hover:from-brand-700 hover:to-brand-800 transition-all shadow-md shadow-brand-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Run AI Analysis
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div id="analysis-spinner" class="htmx-indicator text-center py-20">
+  <div class="w-16 h-16 bg-gradient-to-br from-brand-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-inner">
+    <svg class="w-8 h-8 text-brand-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+  </div>
+  <p class="text-slate-700 font-semibold">Extracting clauses and assessing risk under Indian law...</p>
+  <p class="text-sm text-slate-400 mt-1">Analyzing against Companies Act 2013, Contract Act 1872, DPDP Act 2023, and other Indian statutes</p>
+</div>
+
+<div id="clause-results" class="space-y-5">
+  {% if contract.status == "analyzed" and contract.clauses %}
+    {% include "partials/clause_list.html" %}
+  {% elif contract.status != "analyzed" %}
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm">
+    <div class="text-center py-20 text-slate-400">
+      <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="font-medium">No analysis yet</p>
+      <p class="text-sm mt-1">Click "Run AI Analysis" to extract and assess clauses under Indian law.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

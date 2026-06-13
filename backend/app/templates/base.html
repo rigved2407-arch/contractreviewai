@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contract Review AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
+  <nav class="bg-gradient-to-r from-brand-700 to-brand-900 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-lg font-bold text-white tracking-tight">
+        <span class="text-xl">⚖️</span> Contract Review AI
+      </a>
+      <div class="flex items-center gap-1 text-sm">
+        <a href="/dashboard" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors font-medium {% if request.url.path == '/dashboard' %}bg-white/15 text-white{% endif %}">Dashboard</a>
+        <a href="/contracts/new" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors font-medium {% if request.url.path == '/contracts/new' %}bg-white/15 text-white{% endif %}">Upload</a>
+        <a href="/billing" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors font-medium {% if request.url.path == '/billing' %}bg-white/15 text-white{% endif %}">Pricing</a>
+        <a href="/dpdp/privacy" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors font-medium {% if '/dpdp' in request.url.path %}bg-white/15 text-white{% endif %}">Privacy</a>
+      </div>
+    </div>
+  </nav>
+  <main class="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="border-t border-slate-200 bg-white mt-12">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-slate-400">
+      Contract Review AI &mdash; Built for Indian law firms
+    </div>
+  </footer>
+</body>
+</html>

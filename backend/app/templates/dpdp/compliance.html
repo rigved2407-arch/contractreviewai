@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-900 mb-2">DPDP Compliance Dashboard</h1>
+  <p class="text-sm text-slate-500 mb-8">Digital Personal Data Protection Act, 2023 compliance status</p>
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-6">
+    <h2 class="text-base font-bold text-slate-900 mb-4">Compliance Status Overview</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-gradient-to-br from-brand-50 to-indigo-50 rounded-xl p-4 text-center border border-brand-100">
+        <p class="text-2xl font-bold text-brand-700">{{ summary.active_consents }}</p>
+        <p class="text-xs text-brand-600 mt-1 font-medium">Active Consents</p>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl p-4 text-center border border-blue-100">
+        <p class="text-2xl font-bold text-blue-700">{{ summary.total_consents }}</p>
+        <p class="text-xs text-blue-600 mt-1 font-medium">Total Consents</p>
+      </div>
+      <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 text-center border border-amber-100">
+        <p class="text-2xl font-bold text-amber-700">{{ summary.pending_data_requests }}</p>
+        <p class="text-xs text-amber-600 mt-1 font-medium">Pending Requests</p>
+      </div>
+      <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 text-center border border-green-100">
+        <p class="text-2xl font-bold text-green-700">{{ summary.total_breaches }}</p>
+        <p class="text-xs text-green-600 mt-1 font-medium">Breach Incidents</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+    <h2 class="text-base font-bold text-slate-900 mb-4">DPDP Act Compliance Checklist</h2>
+    <div class="space-y-3">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Consent Management</p><p class="text-xs text-slate-500">Explicit consent recorded for each data principal under Section 4</p></div>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Data Principal Rights</p><p class="text-xs text-slate-500">Access, correction, erasure, and grievance mechanisms under Sections 11-14</p></div>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Storage Limitation</p><p class="text-xs text-slate-500">Data auto-deleted after {{ summary.retention_days }} days under Section 9</p></div>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Data Security</p><p class="text-xs text-slate-500">AES-256 encryption enabled: {{ "Yes" if summary.encryption_enabled else "No (configurable)" }}</p></div>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Data Residency</p><p class="text-xs text-slate-500">Data stored in: {{ summary.data_residency }} (Section 16 compliance)</p></div>
+      </div>
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200">
+        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div><p class="text-sm font-medium text-slate-900">Audit Logging</p><p class="text-xs text-slate-500">All data access and processing activities logged for accountability</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

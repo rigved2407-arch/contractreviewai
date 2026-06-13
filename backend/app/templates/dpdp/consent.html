@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-slate-900 mb-2">Consent Management</h1>
+  <p class="text-sm text-slate-500 mb-8">Manage your consent preferences under the DPDP Act, 2023</p>
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold text-slate-900">Your Consent Records</h2>
+      <span class="px-3 py-1 rounded-full text-xs font-semibold bg-brand-100 text-brand-800">{{ consents|length }} record(s)</span>
+    </div>
+
+    {% if consents %}
+    <div class="space-y-3">
+      {% for c in consents %}
+      <div class="flex items-center justify-between p-4 rounded-xl border {% if c.is_active %}bg-green-50 border-green-200{% else %}bg-slate-50 border-slate-200{% endif %}">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full {% if c.is_active %}bg-green-500{% else %}bg-slate-400{% endif %}"></span>
+            <span class="font-semibold text-sm text-slate-900">{{ c.purpose }}</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            Granted by <strong>{{ c.principal_name }}</strong> ({{ c.principal_email }})
+            {% if c.organization %} &middot; {{ c.organization }}{% endif %}
+          </p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            {% if c.is_active %}
+            Consented on {{ c.consented_at[:10] if c.consented_at else 'N/A' }}
+            {% else %}
+            Withdrawn on {{ c.withdrawn_at[:10] if c.withdrawn_at else 'N/A' }}
+            {% endif %}
+          </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0 ml-3">
+          {% if c.is_active %}
+          <form action="/dpdp/consent/{{ c.id }}/withdraw" method="post">
+            <button type="submit" class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-200 hover:bg-red-100 transition-colors"
+                    onclick="return confirm('Withdrawing consent will not affect processing before this date. Proceed?')">
+              Withdraw
+            </button>
+          </form>
+          {% else %}
+          <span class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium">Withdrawn</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-slate-400">
+      <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <p class="text-sm font-medium">No consent records found</p>
+      <p class="text-xs mt-1">Consent is recorded automatically when you upload documents.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

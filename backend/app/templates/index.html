@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col items-center justify-center py-16 text-center">
+  <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center text-3xl shadow-lg mb-8">⚖️</div>
+  <h1 class="text-5xl font-bold text-slate-900 mb-4">AI-Powered Contract Review</h1>
+  <p class="text-lg text-slate-500 max-w-2xl mb-10">
+    Upload contracts, extract clauses, assess risk against Indian law standards, and generate redlined documents — built for law firms.
+  </p>
+  <div class="flex gap-4">
+    <a href="/contracts/new" class="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 transition-all shadow-md hover:shadow-lg">
+      Upload a Contract
+    </a>
+    <a href="/dashboard" class="px-6 py-3 bg-white border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+      View Dashboard
+    </a>
+  </div>
+  <div class="grid grid-cols-3 gap-10 mt-20 max-w-3xl">
+    <div class="text-center">
+      <div class="w-12 h-12 bg-brand-100 text-brand-700 rounded-xl flex items-center justify-center mx-auto font-bold text-lg">1</div>
+      <h3 class="font-semibold text-slate-800 mt-3">Upload</h3>
+      <p class="text-sm text-slate-500 mt-1">Drop PDF or DOCX contracts</p>
+    </div>
+    <div class="text-center">
+      <div class="w-12 h-12 bg-brand-100 text-brand-700 rounded-xl flex items-center justify-center mx-auto font-bold text-lg">2</div>
+      <h3 class="font-semibold text-slate-800 mt-3">Analyze</h3>
+      <p class="text-sm text-slate-500 mt-1">AI extracts &amp; assesses clauses</p>
+    </div>
+    <div class="text-center">
+      <div class="w-12 h-12 bg-brand-100 text-brand-700 rounded-xl flex items-center justify-center mx-auto font-bold text-lg">3</div>
+      <h3 class="font-semibold text-slate-800 mt-3">Review</h3>
+      <p class="text-sm text-slate-500 mt-1">Risk scores &amp; redline download</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

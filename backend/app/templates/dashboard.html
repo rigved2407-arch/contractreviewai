@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">{{ contracts|length }} contract(s) &middot; {{ analysed_count }} analyzed</p>
+  </div>
+  <a href="/contracts/new" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl text-sm font-medium hover:from-brand-700 hover:to-brand-800 transition-all shadow-md">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Upload Contract
+  </a>
+</div>
+
+<div class="grid grid-cols-3 gap-5 mb-8">
+  <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
+        <svg class="w-5 h-5 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500 uppercase tracking-wide">Total Contracts</p>
+        <p class="text-2xl font-bold text-slate-900">{{ contracts|length }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+        <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500 uppercase tracking-wide">Analyzed</p>
+        <p class="text-2xl font-bold text-green-700">{{ analysed_count }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+        <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500 uppercase tracking-wide">Pending</p>
+        <p class="text-2xl font-bold text-amber-700">{{ contracts|length - analysed_count }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+  <div class="px-6 py-4 border-b border-slate-100">
+    <h2 class="font-semibold text-slate-900">Contracts</h2>
+  </div>
+  <div id="contract-list" class="p-6">
+    {% include "partials/contract_list.html" %}
+  </div>
+</div>
+
+{% if plans %}
+<div class="mt-12">
+  <h2 class="text-lg font-bold text-slate-900 mb-6">Plans</h2>
+  <div class="grid grid-cols-3 gap-6">
+    {% for plan in plans %}
+    <div class="bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow {% if plan.price_inr == 75000 %}ring-2 ring-brand-500 shadow-md{% endif %}">
+      {% if plan.price_inr == 75000 %}
+      <span class="text-xs font-bold text-brand-700 bg-brand-50 px-3 py-1 rounded-full mb-3 inline-block">RECOMMENDED</span>
+      {% endif %}
+      <h3 class="text-lg font-bold text-slate-900">{{ plan.name }}</h3>
+      <p class="text-sm text-slate-500 mt-1">{{ plan.description }}</p>
+      <p class="text-3xl font-bold text-slate-900 mt-4">₹{{ "{:,.0f}".format(plan.price_inr) }}<span class="text-base text-slate-400 font-normal">/mo</span></p>
+      <ul class="mt-4 space-y-2 text-sm text-slate-600">
+        {% for f in plan.features %}
+        <li class="flex items-start gap-2">
+          <svg class="w-4 h-4 text-green-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          {{ f }}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="text-xs text-slate-400 mt-3">Up to {{ plan.max_contracts }} contracts/mo</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
