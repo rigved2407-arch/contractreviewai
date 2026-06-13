@@ -1,17 +1,23 @@
 import uuid
+import logging
+from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Organization, Plan, Subscription, Invoice
+from app.models import Organization, Plan, Subscription, Invoice, User
 from app.schemas import (
     OrganizationCreate, OrganizationOut,
     PlanOut, PlanCreate,
     SubscriptionOut, InvoiceOut,
 )
+from app.config import settings
+from app.services.invoice_generator import generate_gst_invoice
 
+logger = logging.getLogger("contract-review.billing")
 router = APIRouter(prefix="/billing", tags=["billing"])
 
 
@@ -79,19 +85,69 @@ def subscribe(org_id: str, plan_id: str, db: Session = Depends(get_db)):
         end_date=datetime.now(timezone.utc) + timedelta(days=30),
     )
     db.add(sub)
+    db.flush()
 
     inv_num = f"INV-{datetime.now(timezone.utc).strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
-    invoice = Invoice(
+    invoice_data = Invoice(
         subscription_id=sub.id,
         invoice_number=inv_num,
         amount=plan.price_inr,
         status="pending",
         due_date=datetime.now(timezone.utc) + timedelta(days=7),
     )
-    db.add(invoice)
+    db.add(invoice_data)
+    db.flush()
+
+    # Generate GST invoice PDF
+    try:
+        invoice_path = generate_gst_invoice(
+            invoice_number=inv_num,
+            org_name=org.name,
+            org_gstin=org.gstin or "",
+            org_address=org.address or "",
+            org_email=org.email or "",
+            plan_name=plan.name,
+            amount_inr=plan.price_inr,
+        )
+        logger.info("GST invoice generated: %s", invoice_path)
+    except Exception as e:
+        logger.warning("GST invoice generation failed: %s", e)
+
+    # Send invoice email
+    if settings.smtp_host:
+        users = db.query(User).filter(
+            User.organization_id == org_id,
+            User.is_active == True,
+        ).all()
+        for u in users:
+            try:
+                from app.services.email import send_invoice_email
+                import asyncio
+                download_url = f"{settings.app_url}/api/billing/invoices/{invoice_data.id}/download"
+                asyncio.create_task(
+                    send_invoice_email(u.email, u.full_name, inv_num, plan.price_inr, download_url)
+                )
+            except Exception:
+                logger.warning("Failed to send invoice email to %s", u.email)
+
     db.commit()
     db.refresh(sub)
     return sub
+
+
+@router.get("/invoices/{invoice_id}/download")
+def download_invoice(invoice_id: str, db: Session = Depends(get_db)):
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    pdf_path = Path(settings.storage_dir) / "invoices" / f"{invoice.invoice_number}.docx"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Invoice PDF not yet generated")
+    return FileResponse(
+        path=str(pdf_path),
+        filename=f"{invoice.invoice_number}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
 
 @router.get("/subscriptions/{org_id}", response_model=list[SubscriptionOut])

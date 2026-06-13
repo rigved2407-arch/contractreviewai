@@ -8,8 +8,9 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import init_db
-from app.routers import contracts, playbooks, analysis, billing
+from app.database import init_db, SessionLocal
+from app.services.playbook_engine import seed_default_playbook
+from app.routers import contracts, playbooks, analysis, billing, auth
 from app.web.routes import router as web_router
 from app.middleware.auth import APIKeyMiddleware
 from app.middleware.audit import AuditMiddleware
@@ -62,6 +63,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(contracts.router, prefix="/api")
 app.include_router(playbooks.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api")
@@ -83,6 +85,11 @@ def on_startup():
     logger.info("Database initialized (%s)", settings.database_url)
     if settings.encrypt_documents and not settings.encryption_key:
         logger.warning("ENCRYPT_DOCUMENTS enabled but ENCRYPTION_KEY not set — using default key (INSECURE)")
+    db = SessionLocal()
+    try:
+        seed_default_playbook(db)
+    finally:
+        db.close()
     logger.info("Application started v%s", settings.app_version)
 
 

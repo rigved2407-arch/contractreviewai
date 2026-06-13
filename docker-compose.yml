@@ -11,6 +11,16 @@ x-common-env: &common-env
   DATA_RESIDENCY: ${DATA_RESIDENCY:-india}
   LLM_DATA_LOGGING: ${LLM_DATA_LOGGING:-false}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+  JWT_SECRET: ${JWT_SECRET:-}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@contractreviewai.com}
+  SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Contract Review AI}
 
 services:
   backend:

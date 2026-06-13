@@ -1,5 +1,6 @@
 import json
 import uuid
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -7,13 +8,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Contract, Clause, AnalysisRun
+from app.models import Contract, Clause, AnalysisRun, User
 from app.schemas import AnalysisRequest, AnalysisResult, ClauseOut
 from app.config import settings
+from app.deps import require_org
 from app.services.clause_extractor import extract_clauses, generate_summary
 from app.services.playbook_engine import assess_clauses
 from app.services.redliner import generate_redlined_docx
 
+logger = logging.getLogger("contract-review.analysis")
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 
@@ -21,9 +24,13 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 def analyze_contract(
     contract_id: str,
     req: AnalysisRequest,
+    org_id: str = Depends(require_org),
     db: Session = Depends(get_db),
 ):
-    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    contract = db.query(Contract).filter(
+        Contract.id == contract_id,
+        Contract.organization_id == org_id,
+    ).first()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
     if not contract.content_text:
@@ -51,6 +58,7 @@ def analyze_contract(
 
             clause = Clause(
                 contract_id=contract_id,
+                organization_id=org_id,
                 clause_type=cd.get("clause_type", "Unknown"),
                 clause_text=cd.get("clause_text", ""),
                 section_header=cd.get("section_header", ""),
@@ -90,6 +98,23 @@ def analyze_contract(
         db.commit()
         db.refresh(contract)
 
+        # Send analysis-complete email notification
+        if settings.smtp_host:
+            users = db.query(User).filter(
+                User.organization_id == org_id,
+                User.is_active == True,
+            ).all()
+            for u in users:
+                try:
+                    from app.services.email import send_analysis_complete_email
+                    import asyncio
+                    dashboard_url = f"{settings.app_url}/contracts/{contract_id}"
+                    asyncio.create_task(
+                        send_analysis_complete_email(u.email, u.full_name, contract.filename, dashboard_url)
+                    )
+                except Exception:
+                    logger.warning("Failed to send analysis notification to %s", u.email)
+
         clause_outs = [
             ClauseOut.model_validate(c) for c in contract.clauses
         ]
@@ -109,4 +134,5 @@ def analyze_contract(
     except Exception as e:
         analysis.status = "failed"
         db.commit()
+        logger.exception("Analysis failed for contract %s", contract_id)
         raise HTTPException(status_code=500, detail=str(e))

@@ -37,6 +37,20 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = False
 
+    # JWT Auth
+    jwt_secret: str = "change-this-to-a-random-secret-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 1440
+    app_url: str = "http://localhost:3000"
+
+    # SMTP / Email
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@contractreviewai.com"
+    smtp_from_name: str = "Contract Review AI"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

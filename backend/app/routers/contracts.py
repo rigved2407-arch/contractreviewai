@@ -4,14 +4,15 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Contract, Clause
+from app.models import Contract, Clause, Subscription
 from app.schemas import ContractOut, ContractListItem
 from app.config import settings
+from app.deps import require_org, check_contract_limit
 from app.services.document_parser import parse_document_raw
 from app.services.encryption import encrypt_file_bytes
 
@@ -19,14 +20,19 @@ router = APIRouter(prefix="/contracts", tags=["contracts"])
 
 
 @router.get("", response_model=list[ContractListItem])
-def list_contracts(db: Session = Depends(get_db)):
-    contracts = db.query(Contract).order_by(Contract.created_at.desc()).all()
+def list_contracts(org_id: str = Depends(require_org), db: Session = Depends(get_db)):
+    contracts = db.query(Contract).filter(
+        Contract.organization_id == org_id
+    ).order_by(Contract.created_at.desc()).all()
     return contracts
 
 
 @router.get("/{contract_id}", response_model=ContractOut)
-def get_contract(contract_id: str, db: Session = Depends(get_db)):
-    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+def get_contract(contract_id: str, org_id: str = Depends(require_org), db: Session = Depends(get_db)):
+    contract = db.query(Contract).filter(
+        Contract.id == contract_id,
+        Contract.organization_id == org_id,
+    ).first()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
     return contract
@@ -35,8 +41,11 @@ def get_contract(contract_id: str, db: Session = Depends(get_db)):
 @router.post("/upload", response_model=ContractOut)
 async def upload_contract(
     file: UploadFile = File(...),
+    org_id: str = Depends(require_org),
     db: Session = Depends(get_db),
 ):
+    check_contract_limit(org_id, db)
+
     raw_name = (file.filename or "upload")
     safe_name = Path(raw_name).name
     safe_name = re.sub(r'[^\w\-_. ]', '_', safe_name)
@@ -69,6 +78,7 @@ async def upload_contract(
 
     contract = Contract(
         id=file_id,
+        organization_id=org_id,
         filename=safe_name,
         file_path=str(save_path),
         file_type=ext,
@@ -76,14 +86,27 @@ async def upload_contract(
         status="parsed",
     )
     db.add(contract)
+
+    sub = db.query(Subscription).filter(
+        Subscription.organization_id == org_id,
+        Subscription.status.in_(["active", "trial"]),
+    ).first()
+    if sub:
+        sub.contract_count = db.query(Contract).filter(
+            Contract.organization_id == org_id
+        ).count() + 1
+
     db.commit()
     db.refresh(contract)
     return contract
 
 
 @router.get("/{contract_id}/redline")
-def download_redline(contract_id: str, db: Session = Depends(get_db)):
-    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+def download_redline(contract_id: str, org_id: str = Depends(require_org), db: Session = Depends(get_db)):
+    contract = db.query(Contract).filter(
+        Contract.id == contract_id,
+        Contract.organization_id == org_id,
+    ).first()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
@@ -99,8 +122,11 @@ def download_redline(contract_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{contract_id}")
-def delete_contract(contract_id: str, db: Session = Depends(get_db)):
-    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+def delete_contract(contract_id: str, org_id: str = Depends(require_org), db: Session = Depends(get_db)):
+    contract = db.query(Contract).filter(
+        Contract.id == contract_id,
+        Contract.organization_id == org_id,
+    ).first()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 

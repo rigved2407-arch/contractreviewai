@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from sqlalchemy.orm import Session
 
@@ -23,12 +24,30 @@ RISK_LEVEL_MAP = {
 }
 
 
-def get_default_rules(db: Session) -> list[PlaybookRule]:
-    rules = []
+_DEFAULT_PLAYBOOK_SEEDED = False
+
+
+def seed_default_playbook(db: Session):
+    global _DEFAULT_PLAYBOOK_SEEDED
+    if _DEFAULT_PLAYBOOK_SEEDED:
+        return
+    existing = db.query(PlaybookRule).count()
+    if existing > 0:
+        _DEFAULT_PLAYBOOK_SEEDED = True
+        return
+
+    playbook = Playbook(
+        name="India Market Standard",
+        description="Default playbook with Indian law market standards for all clause types. Auto-generated.",
+    )
+    db.add(playbook)
+    db.flush()
+
     for clause_type, info in RISK_LEVEL_MAP.items():
         risk = info["risk"]
         statute = info["statute"]
         rule = PlaybookRule(
+            playbook_id=playbook.id,
             clause_type=clause_type,
             preferred_position=f"Standard market position for {clause_type} (India)",
             risk_if_missing=f"Missing {clause_type} clause creates uncertainty under Indian law ({statute})",
@@ -36,9 +55,11 @@ def get_default_rules(db: Session) -> list[PlaybookRule]:
             is_required=risk == "high",
             priority=3 if risk == "high" else (2 if risk == "medium" else 1),
         )
-        rules.append(rule)
+        db.add(rule)
+
     for key, tmpl in INDIAN_CLAUSE_TYPES.items():
         rule = PlaybookRule(
+            playbook_id=playbook.id,
             clause_type=key,
             preferred_position=tmpl["preferred"],
             risk_if_missing=tmpl["if_missing"],
@@ -46,11 +67,16 @@ def get_default_rules(db: Session) -> list[PlaybookRule]:
             is_required=tmpl["required"],
             priority=3 if tmpl["risk"] == "high" else (2 if tmpl["risk"] == "medium" else 1),
         )
-        rules.append(rule)
-    return rules
+        db.add(rule)
+
+    db.commit()
+    _DEFAULT_PLAYBOOK_SEEDED = True
+    logging.getLogger("contract-review").info("Default playbook seeded with %d rules", len(RISK_LEVEL_MAP) + len(INDIAN_CLAUSE_TYPES))
 
 
 def assess_clauses(clauses: list[dict], playbook_id: Optional[str], db: Session) -> list[dict]:
+    seed_default_playbook(db)
+
     if playbook_id:
         playbook = db.query(Playbook).filter(Playbook.id == playbook_id).first()
         if playbook:
@@ -59,9 +85,6 @@ def assess_clauses(clauses: list[dict], playbook_id: Optional[str], db: Session)
             rules = db.query(PlaybookRule).all()
     else:
         rules = db.query(PlaybookRule).all()
-
-    if not rules:
-        rules = get_default_rules(db)
 
     rules_by_type = {r.clause_type: r for r in rules}
 

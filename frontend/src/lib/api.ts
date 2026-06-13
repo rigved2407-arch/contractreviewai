@@ -1,4 +1,4 @@
-import type { Contract, ContractListItem, AnalysisResult, Playbook } from "@/types";
+import type { Contract, ContractListItem, AnalysisResult, Playbook, AuthResponse, RegisterRequest, LoginRequest } from "@/types";
 
 const BASE = "/api";
 
@@ -75,6 +75,47 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    });
+  },
+
+  // Auth
+  register(data: RegisterRequest): Promise<{ message: string; user_id: string }> {
+    return fetchJson(`${BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  },
+
+  login(data: LoginRequest): Promise<AuthResponse> {
+    return fetchJson(`${BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  },
+
+  verifyEmail(token: string): Promise<{ message: string }> {
+    return fetchJson(`${BASE}/auth/verify-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  forgotPassword(email: string): Promise<{ message: string }> {
+    return fetchJson(`${BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return fetchJson(`${BASE}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
     });
   },
 };

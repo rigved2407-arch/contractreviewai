@@ -64,3 +64,24 @@ export interface AnalysisResult {
   clauses: Clause[];
   redline_url: string | null;
 }
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user_id: string;
+  organization_id: string;
+  role: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  full_name: string;
+  organization_name: string;
+  gstin?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}

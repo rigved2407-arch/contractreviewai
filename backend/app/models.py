@@ -14,10 +14,65 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    email = Column(String(256), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    full_name = Column(String(256), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    role = Column(String(32), default="admin")
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    organization = relationship("Organization", back_populates="users")
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    token = Column(String(512), nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+
+class EmailVerificationToken(Base):
+    __tablename__ = "email_verification_tokens"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    token = Column(String(512), nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String(256), nullable=False)
+    email = Column(String(256))
+    gstin = Column(String(32))
+    address = Column(Text)
+    created_at = Column(DateTime, default=_utcnow)
+
+    users = relationship("User", back_populates="organization")
+    subscriptions = relationship("Subscription", back_populates="organization", cascade="all, delete-orphan")
+    contracts = relationship("Contract", back_populates="organization")
+
+
 class Contract(Base):
     __tablename__ = "contracts"
 
     id = Column(String, primary_key=True, default=_uuid)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     filename = Column(String(512), nullable=False)
     file_path = Column(String(1024))
     file_type = Column(String(16))
@@ -28,6 +83,7 @@ class Contract(Base):
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
+    organization = relationship("Organization", back_populates="contracts")
     clauses = relationship("Clause", back_populates="contract", cascade="all, delete-orphan")
 
 
@@ -36,6 +92,7 @@ class Clause(Base):
 
     id = Column(String, primary_key=True, default=_uuid)
     contract_id = Column(String, ForeignKey("contracts.id"), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     clause_type = Column(String(128))
     clause_text = Column(Text)
     section_header = Column(String(256))
@@ -89,19 +146,6 @@ class AnalysisRun(Base):
     low_risk_count = Column(Integer, default=0)
     redline_path = Column(String(1024))
     created_at = Column(DateTime, default=_utcnow)
-
-
-class Organization(Base):
-    __tablename__ = "organizations"
-
-    id = Column(String, primary_key=True, default=_uuid)
-    name = Column(String(256), nullable=False)
-    email = Column(String(256))
-    gstin = Column(String(32))
-    address = Column(Text)
-    created_at = Column(DateTime, default=_utcnow)
-
-    subscriptions = relationship("Subscription", back_populates="organization", cascade="all, delete-orphan")
 
 
 class Plan(Base):
