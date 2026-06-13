@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -102,11 +102,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.refresh(user)
 
     verify_url = f"{settings.app_url}/verify-email?token={vt.token}"
-    import asyncio
-    try:
-        asyncio.create_task(send_welcome_email(user.email, user.full_name, verify_url))
-    except Exception:
-        logger.warning("Could not send welcome email (async task failed)")
+    send_welcome_email(user.email, user.full_name, verify_url)
 
     logger.info("User registered: %s (org: %s)", user.email, org.name)
     return {"message": "Registration successful. Please check your email to verify your account.", "user_id": user.id}
@@ -167,11 +163,7 @@ def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
     db.commit()
 
     reset_url = f"{settings.app_url}/reset-password?token={rt.token}"
-    import asyncio
-    try:
-        asyncio.create_task(send_password_reset_email(user.email, user.full_name, reset_url))
-    except Exception:
-        logger.warning("Could not send password reset email")
+    send_password_reset_email(user.email, user.full_name, reset_url)
 
     return {"message": "If the email exists, a reset link has been sent."}
 

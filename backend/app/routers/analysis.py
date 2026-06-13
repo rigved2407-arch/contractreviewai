@@ -107,11 +107,8 @@ def analyze_contract(
             for u in users:
                 try:
                     from app.services.email import send_analysis_complete_email
-                    import asyncio
                     dashboard_url = f"{settings.app_url}/contracts/{contract_id}"
-                    asyncio.create_task(
-                        send_analysis_complete_email(u.email, u.full_name, contract.filename, dashboard_url)
-                    )
+                    send_analysis_complete_email(u.email, u.full_name, contract.filename, dashboard_url)
                 except Exception:
                     logger.warning("Failed to send analysis notification to %s", u.email)
 

@@ -122,11 +122,8 @@ def subscribe(org_id: str, plan_id: str, db: Session = Depends(get_db)):
         for u in users:
             try:
                 from app.services.email import send_invoice_email
-                import asyncio
                 download_url = f"{settings.app_url}/api/billing/invoices/{invoice_data.id}/download"
-                asyncio.create_task(
-                    send_invoice_email(u.email, u.full_name, inv_num, plan.price_inr, download_url)
-                )
+                send_invoice_email(u.email, u.full_name, inv_num, plan.price_inr, download_url)
             except Exception:
                 logger.warning("Failed to send invoice email to %s", u.email)
 

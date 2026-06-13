@@ -23,6 +23,27 @@ x-common-env: &common-env
   SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Contract Review AI}
 
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-cra}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-cra_secret_2024}
+      POSTGRES_DB: ${PG_DATABASE:-contract_review}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-cra} -d ${PG_DATABASE:-contract_review}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
   backend:
     build:
       context: ./backend
@@ -32,13 +53,16 @@ services:
       - "8000:8000"
     environment:
       <<: *common-env
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/contract_review.db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cra:cra_secret_2024@db:5432/contract_review}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-llama-3.3-70b-versatile}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.groq.com/openai/v1}
       STORAGE_DIR: ${STORAGE_DIR:-/data/storage}
     volumes:
       - app_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -73,3 +97,4 @@ services:
 
 volumes:
   app_data:
+  pg_data:
