@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Upload, FileText, Loader2, CheckCircle } from "lucide-react";
+import { Upload, Loader2, CheckCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Contract } from "@/types";
 
