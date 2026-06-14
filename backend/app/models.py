@@ -21,7 +21,7 @@ class User(Base):
     email = Column(String(256), unique=True, nullable=False, index=True)
     password_hash = Column(String(256), nullable=False)
     full_name = Column(String(256), nullable=False)
-    organization_id = Column(String, ForeignKey("organizations.id"), nullable=True)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     role = Column(String(32), default="admin")
