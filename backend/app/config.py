@@ -18,7 +18,7 @@ def _from_env_or_secret(name: str, default: str = "") -> str:
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql://cra:cra_secret_2024@localhost:5432/contract_review"
+    database_url: str = "sqlite:///./data/contract_review.db"
     openai_api_key: str = ""
     openai_model: str = "llama-3.3-70b-versatile"
     openai_base_url: str = "https://api.groq.com/openai/v1"
